@@ -1,0 +1,268 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters", "fullTextSearch", "postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [pg_trgm]
+}
+
+enum Level {
+  Level1
+  Level2
+  Level3
+  Level4
+  SYSTEM_ADMIN // New system-wide admin role
+}
+
+model User {
+  id               String            @id @default(uuid())
+  email            String            @unique
+  passwordHash     String
+  passwordHashSalt String
+  phoneNumber      String
+  firstName        String
+  lastName         String
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  douments         Document[]
+  organisationId   String?
+  organisation     Organisation?     @relation(fields: [organisationId], references: [id])
+  level            Level             @default(Level4)
+  refreshTokenJti  String?
+  documentHistory  DocumentHistory[]
+  consultations    Consultation[]
+}
+
+model Patient {
+  id              String          @id @default(uuid())
+  firstName       String
+  lastName        String
+  insurance       String
+  ahvNumber       String
+  birthDate       DateTime
+  street          String
+  city            String
+  zip             String
+  apartmentNumber String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  documents       Document[]
+  organisationId  String
+  organisation    Organisation    @relation(fields: [organisationId], references: [id])
+  summary         PatientSummary?
+  consultations   Consultation[]
+}
+
+model PatientSummary {
+  id          String   @id // The ID of the summary that is provided by the AI service
+  patientId   String   @unique // Ensures only one summary per patient
+  patient     Patient  @relation(fields: [patientId], references: [id])
+  contentHash String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Consultation {
+  id              String     @id @default(uuid())
+  date            DateTime
+  transcriptionId String?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  userId          String
+  user            User       @relation(fields: [userId], references: [id])
+  patientId       String
+  patient         Patient    @relation(fields: [patientId], references: [id])
+  documents       Document[]
+}
+
+enum DocumentType {
+  PROGRESS_REPORT
+  REFERRAL_LETTER
+}
+
+enum DocumentStatus {
+  DRAFT
+  PENDING
+  CORRECTION
+  APPROVED
+}
+
+model Document {
+  id                String            @id @default(uuid())
+  title             String
+  documentType      DocumentType      @default(PROGRESS_REPORT)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  author            User              @relation(fields: [authorId], references: [id])
+  authorId          String
+  patient           Patient           @relation(fields: [patientId], references: [id])
+  patientId         String
+  content           Json
+  status            DocumentStatus    @default(DRAFT)
+  correctionComment String?
+  documentHistory   DocumentHistory[]
+  consultationId    String?
+  consultation      Consultation?     @relation(fields: [consultationId], references: [id])
+}
+
+enum DocumentAction {
+  CREATED
+  UPDATED
+  APPROVED
+  REJECTED
+  SUBMITTED
+}
+
+model DocumentHistory {
+  id         String         @id @default(uuid())
+  documentId String
+  document   Document       @relation(fields: [documentId], references: [id])
+  createdAt  DateTime       @default(now())
+  action     DocumentAction
+  userId     String
+  user       User           @relation(fields: [userId], references: [id])
+}
+
+model Organisation {
+  id           String    @id @default(uuid())
+  name         String
+  taxNumber    String?
+  street       String?
+  city         String?
+  zip          String?
+  email        String?
+  phone        String?
+  websiteUrl   String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  User         User[]
+  Patient      Patient[]
+  logo         Logo?     @relation("OrganisationLogo")
+  licenseCount Int       @default(0) // Number of licenses the organisation bought
+}
+
+model Logo {
+  id             String        @id @default(uuid())
+  imageData      Bytes
+  organisation   Organisation? @relation("OrganisationLogo", fields: [organisationId], references: [id])
+  organisationId String        @unique // Unique constraint for the 1-to-1 relationship
+}
+
+model Icd10Chapter {
+  code       String       @id @db.VarChar(2)
+  name       String       @db.VarChar(255)
+  Icd10Group Icd10Group[]
+  Icd10Codes Icd10Code[]
+}
+
+model Icd10Group {
+  groupFrom   String  @id @db.VarChar(3) // First ICD code of the group (e.g., "A00")
+  groupTo     String? @db.VarChar(3) // Last ICD code of the group (e.g., "A09")
+  chapterCode String  @db.VarChar(2) // ICD chapter number (e.g., "01")
+  title       String  @db.VarChar(255)
+
+  // Relation zur Kapitel-Tabelle
+  kapitel    Icd10Chapter @relation(fields: [chapterCode], references: [code], onDelete: Cascade)
+  Icd10Codes Icd10Code[]
+}
+
+model Icd10Morbidity {
+  code       String      @id @db.VarChar(5) // Primärschlüssel
+  title      String      @db.VarChar(255) // Titel / Beschreibung
+  Icd10Codes Icd10Code[]
+}
+
+model Icd10MortalityGroup1 {
+  code  String @id @db.VarChar(5) // Primärschlüssel
+  title String @db.VarChar(255) // Titel / Beschreibung
+
+  Icd10Mortality1 Icd10Mortality1[]
+}
+
+model Icd10Mortality1 {
+  code      String @id @db.VarChar(5) // Schlüsselnummer (z. B. "001", "1-901")
+  groupCode String @db.VarChar(5) // Gruppenschlüsselnummer (z. B. "1-001", "1-901")
+  title     String @db.VarChar(255) // Beschreibung der Krankheit
+
+  // Relation zur MortalityGroup (optional, falls Gruppen existieren)
+  mortalityGroup Icd10MortalityGroup1 @relation(fields: [groupCode], references: [code])
+  Icd10Codes     Icd10Code[]
+}
+
+model Icd10Mortality2 {
+  code       String      @id @db.VarChar(5) // Eindeutige Schlüsselnummer
+  title      String      @db.VarChar(255) // Beschreibung der Krankheit
+  Icd10Codes Icd10Code[]
+}
+
+model Icd10MortalityGroup3 {
+  code  String @id @unique @db.VarChar(5) // Gruppenschlüsselnummer (z. B. "1-001", "1-901")
+  title String @db.VarChar(255) // Gruppenbeschreibung
+
+  Icd10Mortality3 Icd10Mortality3[]
+}
+
+model Icd10Mortality3 {
+  code      String @id @db.VarChar(5) // Schlüsselnummer (z. B. "001", "1-901")
+  groupCode String @db.VarChar(5) // Gruppenschlüsselnummer (z. B. "1-001", "1-901")
+  title     String @db.VarChar(255) // Beschreibung der Krankheit
+
+  // Relation zur MortalityGroup3 (optional, falls Gruppen existieren)
+  mortalityGroup3 Icd10MortalityGroup3 @relation(fields: [groupCode], references: [code])
+  Icd10Codes      Icd10Code[]
+}
+
+model Icd10Mortality4 {
+  code       String      @id @db.VarChar(5) // Schlüsselnummer (z. B. "001", "1-901")
+  title      String      @db.VarChar(255) // Beschreibung der Krankheit
+  Icd10Codes Icd10Code[]
+}
+
+model Icd10Code {
+  Code          String  @id @db.VarChar(7) // Primärschlüssel
+  Ebene         String  @db.VarChar(1)
+  Ort           String  @db.VarChar(1)
+  Art           String  @db.VarChar(1)
+  KapNr         String  @db.VarChar(2) // Fremdschlüssel zu Kapitel
+  GrVon         String  @db.VarChar(3) // Fremdschlüssel zu Gruppen
+  NormCode      String  @unique @db.VarChar(6)
+  CodeOhnePunkt String  @unique @db.VarChar(5)
+  Titel         String  @db.VarChar(255)
+  Dreisteller   String  @db.VarChar(255)
+  Viersteller   String? @db.VarChar(255)
+  Fuenfsteller  String? @db.VarChar(255)
+  P295          String  @db.VarChar(1)
+  P301          String  @db.VarChar(1)
+  MortL1Code    String  @db.VarChar(5) // Fremdschlüssel zu MortL1
+  MortL2Code    String  @db.VarChar(5) // Fremdschlüssel zu MortL2
+  MortL3Code    String  @db.VarChar(5) // Fremdschlüssel zu MortL3
+  MortL4Code    String  @db.VarChar(5) // Fremdschlüssel zu MortL4
+  MorbLCode     String  @db.VarChar(5) // Fremdschlüssel zu MorbL
+  SexCode       String  @db.VarChar(1)
+  SexFehlerTyp  String  @db.VarChar(1)
+  AltUnt        String  @db.VarChar(4)
+  AltOb         String  @db.VarChar(4)
+  AltFehlerTyp  String  @db.VarChar(1)
+  Exot          String  @db.VarChar(1)
+  Belegt        String  @db.VarChar(1)
+  IfSGMeldung   String  @db.VarChar(1)
+  IfSGLabor     String  @db.VarChar(1)
+
+  // Relationen
+  kapitel Icd10Chapter    @relation(fields: [KapNr], references: [code], onDelete: Cascade)
+  gruppen Icd10Group      @relation(fields: [GrVon], references: [groupFrom], onDelete: Cascade)
+  mortL1  Icd10Mortality1 @relation(fields: [MortL1Code], references: [code])
+  mortL2  Icd10Mortality2 @relation(fields: [MortL2Code], references: [code])
+  mortL3  Icd10Mortality3 @relation(fields: [MortL3Code], references: [code])
+  mortL4  Icd10Mortality4 @relation(fields: [MortL4Code], references: [code])
+  morbl   Icd10Morbidity  @relation(fields: [MorbLCode], references: [code])
+}

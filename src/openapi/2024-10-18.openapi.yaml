@@ -1,0 +1,732 @@
+openapi: "3.1.0"
+
+info:
+  title: "CureCode AI Service"
+  version: "2024-10-18"
+
+servers:
+  - url: "https://app-curecode-ai-service-production.azurewebsites.net"
+  - url: "https://app-curecode-ai-service-staging.azurewebsites.net"
+  - url: "http://localhost:3000"
+
+tags:
+  - name: "Completions"
+  - name: "Summaries"
+  - name: "Transcriptions"
+
+paths:
+  /completions:
+    post:
+      operationId: "createCompletion"
+      tags:
+        - "Completions"
+      parameters:
+        - $ref: "#/components/parameters/apiVersionHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCompletion"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Completion"
+        default:
+          description: Error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+      security:
+        - basic: []
+
+  /completions/{id}:
+    get:
+      operationId: "getCompletion"
+      tags:
+        - "Completions"
+      parameters:
+        - $ref: "#/components/parameters/idPathParam"
+        - $ref: "#/components/parameters/apiVersionHeader"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Completion"
+        default:
+          description: Error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+      security:
+        - basic: []
+
+  /summaries:
+    post:
+      operationId: "createSummary"
+      tags:
+        - "Summaries"
+      parameters:
+        - $ref: "#/components/parameters/apiVersionHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSummary"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Summary"
+        default:
+          description: Error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+      security:
+        - basic: []
+
+  /summaries/{id}:
+    get:
+      operationId: "getSummary"
+      tags:
+        - "Summaries"
+      parameters:
+        - $ref: "#/components/parameters/idPathParam"
+        - $ref: "#/components/parameters/apiVersionHeader"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Summary"
+        default:
+          description: Error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+      security:
+        - basic: []
+
+  /transcriptions:
+    post:
+      operationId: "createTranscription"
+      tags:
+        - "Transcriptions"
+      parameters:
+        - $ref: "#/components/parameters/apiVersionHeader"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - "userId"
+                - "tenantId"
+                - "audioFile"
+              properties:
+                userId:
+                  type: string
+                  nullable: false
+                tenantId:
+                  type: string
+                  nullable: false
+                audioFile:
+                  type: string
+                  format: binary
+                  nullable: false
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transcription"
+        default:
+          description: Error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+      security:
+        - basic: []
+
+  /transcriptions/{id}:
+    get:
+      operationId: "getTranscription"
+      tags:
+        - "Summaries"
+      parameters:
+        - $ref: "#/components/parameters/idPathParam"
+        - $ref: "#/components/parameters/apiVersionHeader"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transcription"
+        default:
+          description: Error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+      security:
+        - basic: []
+
+components:
+  parameters:
+    idPathParam:
+      in: path
+      name: "id"
+      required: true
+      example: "123e4567-e89b-12d3-a456-426614174000"
+      schema:
+        type: string
+
+    apiVersionHeader:
+      in: header
+      name: "X-Api-Version"
+      example: "2024-10-18"
+      schema:
+        type: string
+        default: "2024-10-18"
+
+  schemas:
+    # completions
+
+    CreateCompletion:
+      type: object
+      required:
+        - "user"
+        - "tenant"
+        - "document"
+        - "prompt"
+      properties:
+        user:
+          type: object
+          required:
+            - "id"
+          nullable: false
+          properties:
+            id:
+              type: string
+              nullable: false
+        tenant:
+          type: object
+          required:
+            - "id"
+          nullable: false
+          properties:
+            id:
+              type: string
+              nullable: false
+        document:
+          oneOf:
+            - $ref: "#/components/schemas/CreateCompletionReferralLetterDocument"
+            - $ref: "#/components/schemas/CreateCompletionProgressReportDocument"
+            - $ref: "#/components/schemas/CreateCompletionNurseLogEntryDocument"
+        prompt:
+          oneOf:
+            - $ref: "#/components/schemas/CreateCompletionDocumentPrompt"
+            - $ref: "#/components/schemas/CreateCompletionParagraphPrompt"
+            - $ref: "#/components/schemas/CreateCompletionInlinePrompt"
+            - $ref: "#/components/schemas/CreateCompletionCommentPrompt"
+
+    CreateCompletionDocument:
+      type: object
+      required:
+        - "id"
+      properties:
+        id:
+          type: string
+          nullable: false
+
+    CreateCompletionProgressReportDocument:
+      allOf:
+        - $ref: "#/components/schemas/CreateCompletionDocument"
+        - type: object
+          required:
+            - "id"
+            - "type"
+          properties:
+            id:
+              type: string
+              nullable: false
+            type:
+              enum:
+                - "progressReport"
+            sectionType:
+              $ref: "#/components/schemas/ProgressReportSectionType"
+
+    CreateCompletionReferralLetterDocument:
+      allOf:
+        - $ref: "#/components/schemas/CreateCompletionDocument"
+        - type: object
+          required:
+            - "id"
+            - "type"
+          properties:
+            id:
+              type: string
+              nullable: false
+            type:
+              enum:
+                - "referralLetter"
+            sectionType:
+              $ref: "#/components/schemas/ReferralLetterSectionType"
+
+    CreateCompletionNurseLogEntryDocument:
+      allOf:
+        - $ref: "#/components/schemas/CreateCompletionDocument"
+        - type: object
+          required:
+            - "id"
+            - "type"
+          properties:
+            id:
+              type: string
+              nullable: false
+            type:
+              enum:
+                - "nurseLogEntry"
+
+    CreateCompletionPrompt:
+      type: object
+      properties:
+        language:
+          $ref: "#/components/schemas/Language"
+
+    CreateCompletionDocumentPrompt:
+      allOf:
+        - $ref: "#/components/schemas/CreateCompletionPrompt"
+        - type: object
+          required:
+            - "type"
+            - "content"
+          properties:
+            type:
+              enum:
+                - "document"
+            content:
+              type: string
+              nullable: false
+
+    CreateCompletionParagraphPrompt:
+      allOf:
+        - $ref: "#/components/schemas/CreateCompletionPrompt"
+        - type: object
+          required:
+            - "type"
+            - "content"
+          properties:
+            type:
+              enum:
+                - "paragraph"
+            content:
+              type: string
+              nullable: false
+
+    CreateCompletionInlinePrompt:
+      allOf:
+        - $ref: "#/components/schemas/CreateCompletionPrompt"
+        - type: object
+          required:
+            - "type"
+            - "content"
+            - "caretPosition"
+          properties:
+            type:
+              enum:
+                - "inline"
+            content:
+              type: string
+              nullable: false
+            caretPosition:
+              type: integer
+              nullable: false
+
+    CreateCompletionCommentPrompt:
+      allOf:
+        - $ref: "#/components/schemas/CreateCompletionPrompt"
+        - type: object
+          required:
+            - "type"
+            - "draftContent"
+            - "commentContent"
+            - "highlightStartPosition"
+            - "highlightEndPosition"
+          properties:
+            type:
+              enum:
+                - "comment"
+            draftContent:
+              type: string
+              nullable: false
+            commentContent:
+              type: string
+              nullable: false
+            highlightStartPosition:
+              type: integer
+              nullable: false
+            highlightEndPosition:
+              type: integer
+              nullable: false
+
+    Completion:
+      type: object
+      required:
+        - "id"
+        - "createdAt"
+        - "updatedAt"
+        - "completedAt"
+        - "user"
+        - "tenant"
+        - "document"
+        - "prompt"
+        - "completion"
+      properties:
+        id:
+          type: string
+          nullable: false
+        createdAt:
+          type: string
+          format: date-time
+          nullable: false
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: false
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+        user:
+          type: object
+          nullable: false
+          required:
+            - "id"
+          properties:
+            id:
+              type: string
+              nullable: false
+        tenant:
+          type: object
+          nullable: false
+          required:
+            - "id"
+          properties:
+            id:
+              type: string
+              nullable: false
+        document:
+          type: object
+          nullable: false
+          required:
+            - "id"
+          properties:
+            id:
+              type: string
+              nullable: false
+        prompt:
+          type: object
+          nullable: false
+          required:
+            - "tokens"
+          properties:
+            tokens:
+              type: integer
+              nullable: false
+        completion:
+          type: object
+          nullable: false
+          required:
+            - "content"
+            - "tokens"
+          properties:
+            content:
+              type: string
+              nullable: false
+            tokens:
+              type: integer
+              nullable: false
+
+    # summaries
+
+    CreateSummary:
+      type: object
+      required:
+        - "user"
+        - "tenant"
+        - "prompt"
+      properties:
+        user:
+          type: object
+          required:
+            - "id"
+          nullable: false
+          properties:
+            id:
+              type: string
+              nullable: false
+        tenant:
+          type: object
+          required:
+            - "id"
+          nullable: false
+          properties:
+            id:
+              type: string
+              nullable: false
+        prompt:
+          oneOf:
+            - $ref: "#/components/schemas/CreateSummarySimplePrompt"
+
+    CreatSummaryPrompt:
+      type: object
+      properties:
+        language:
+          $ref: "#/components/schemas/Language"
+
+    CreateSummarySimplePrompt:
+      allOf:
+        - $ref: "#/components/schemas/CreatSummaryPrompt"
+        - type: object
+          required:
+            - "type"
+            - "content"
+          properties:
+            type:
+              enum:
+                - "simple"
+            content:
+              type: string
+              nullable: false
+
+    Summary:
+      type: object
+      required:
+        - "id"
+        - "createdAt"
+        - "updatedAt"
+        - "completedAt"
+        - "user"
+        - "tenant"
+        - "prompt"
+        - "summary"
+      properties:
+        id:
+          type: string
+          nullable: false
+        createdAt:
+          type: string
+          format: date-time
+          nullable: false
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: false
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+        user:
+          type: object
+          nullable: false
+          required:
+            - "id"
+          properties:
+            id:
+              type: string
+              nullable: false
+        tenant:
+          type: object
+          nullable: false
+          required:
+            - "id"
+          properties:
+            id:
+              type: string
+              nullable: false
+        prompt:
+          type: object
+          nullable: false
+          required:
+            - "tokens"
+          properties:
+            tokens:
+              type: integer
+              nullable: false
+        summary:
+          type: object
+          nullable: false
+          required:
+            - "content"
+            - "tokens"
+          properties:
+            content:
+              type: string
+              nullable: false
+            tokens:
+              type: integer
+              nullable: false
+
+    # transcriptions
+
+    Transcription:
+      type: object
+      required:
+        - "id"
+        - "createdAt"
+        - "updatedAt"
+        - "completedAt"
+        - "user"
+        - "tenant"
+        - "transcription"
+      properties:
+        id:
+          type: string
+          nullable: false
+        createdAt:
+          type: string
+          format: date-time
+          nullable: false
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: false
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+        user:
+          type: object
+          nullable: false
+          required:
+            - "id"
+          properties:
+            id:
+              type: string
+              nullable: false
+        tenant:
+          type: object
+          nullable: false
+          required:
+            - "id"
+          properties:
+            id:
+              type: string
+              nullable: false
+        transcription:
+          type: object
+          nullable: false
+          required:
+            - "content"
+          properties:
+            content:
+              type: string
+              nullable: false
+
+    # prompt templates
+
+    PromptTemplate:
+      type: object
+      required:
+        - "name"
+        - "version"
+        - "parameters"
+      properties:
+        name:
+          $ref: "#/components/schemas/PromptName"
+        version:
+          type: string
+          nullable: false
+        parameters:
+          type: array
+          items:
+            type: string
+
+    PromptName:
+      enum:
+        - "general"
+
+    # common
+
+    ProblemDetails:
+      type: object
+      required:
+        - "status"
+        - "title"
+        - "detail"
+      additionalProperties: true
+      properties:
+        status:
+          type: integer
+          nullable: false
+        title:
+          type: string
+          nullable: false
+        detail:
+          type: string
+          nullable: false
+
+    CompletionState:
+      enum:
+        - "created"
+        - "processing"
+        - "completed"
+
+    DocumentType:
+      enum:
+        - "progressReport"
+        - "referralLetter"
+        - "nurseLogEntry"
+
+    ProgressReportSectionType:
+      enum:
+        - "contactReason"
+        - "anamnesis"
+        - "currentCondition"
+        - "progress"
+        - "diagnosis"
+        - "treatment"
+        - "plan"
+        - "prognosis"
+
+    ReferralLetterSectionType:
+      enum:
+        - "contactReason"
+        - "anamnesis"
+        - "currentCondition"
+        - "progress"
+        - "diagnosis"
+        - "treatment"
+        - "plan"
+        - "prognosis"
+
+    Language:
+      enum:
+        - "de"
+        - "fr"
+        - "it"
+        - "en"
+
+  securitySchemes:
+    basic:
+      type: http
+      scheme: basic

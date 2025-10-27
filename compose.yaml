@@ -1,0 +1,42 @@
+name: "curecode-app-service"
+
+services:
+  postgres:
+    image: "postgres:16.4"
+    environment:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "postgres"
+      POSTGRES_DB: "curecode_app_service"
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - postgres:/var/lib/postgresql/data
+      - ./scripts/postgres/init:/docker-entrypoint-initdb.d
+
+#  pgbouncer:
+#    image: bitnami/pgbouncer:1.24.1-debian-12-r9
+
+#    #image: "bitnami/pgbouncer:1.22.1"
+#    depends_on:
+#      - postgres
+#    environment:
+#      POSTGRESQL_HOST: "postgres"
+#      POSTGRESQL_USERNAME: "postgres"
+#      POSTGRESQL_PASSWORD: "postgres"
+#      PGBOUNCER_DATABASE: "curecode_app_service"
+#      PGBOUNCER_POOL_MODE: "transaction"
+#      MAX_PREPARED_STATEMENTS: "100"
+#      PGBOUNCER_USERLIST_FILE: /bitnami/userlists.txt
+#    ports:
+#      - "6432:6432"
+#    volumes:
+#      - './scripts/pgbouncer/userlists.txt:/bitnami/userlists.txt'
+
+volumes:
+  postgres:
+    driver: local
