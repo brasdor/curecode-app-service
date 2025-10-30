@@ -140,10 +140,10 @@ jobs:
 
       - name: "Deploy to Staging WebApp"
         id: deploy
-        uses: azure/webapps-deploy@v2
+        uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ env.AZURE_APP_SERVICE_NAME_STAGING }}
-          publish-profile: ${{ secrets.AZURE_APP_SERVICE_PUBLISH_PROFILE_STAGING }}
+          publish-profile: ${{ secrets.AZURE_WEB_APP_PUBLISH_PROFILE_STAGING }}
           images: ${{ needs.package.outputs.fqin }}
 
   production-deploy:
@@ -177,7 +177,7 @@ jobs:
 
       - name: "Deploy to Production WebApp"
         id: deploy
-        uses: azure/webapps-deploy@v2
+        uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ env.AZURE_APP_SERVICE_NAME_PRODUCTION }}
           publish-profile: ${{ secrets.AZURE_APP_SERVICE_PUBLISH_PROFILE_PRODUCTION }}
