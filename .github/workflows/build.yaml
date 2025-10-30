@@ -185,6 +185,6 @@ jobs:
 #          app-name: ${{ env.AZURE_APP_SERVICE_NAME_PRODUCTION }}
 #          publish-profile: ${{ secrets.AZURE_APP_SERVICE_PUBLISH_PROFILE_PRODUCTION }}
 #          images: ${{ needs.package.outputs.fqin }}
-        app-name: app-curecode-app-production
-        publish-profile: ${{ secrets.AZURE_WEB_APP_PUBLISH_PROFILE_PRODUCTION }}
-        images: ${{ needs.package.outputs.fqin }}
+          app-name: app-curecode-app-production
+          publish-profile: ${{ secrets.AZURE_WEB_APP_PUBLISH_PROFILE_PRODUCTION }}
+          images: ${{ needs.package.outputs.fqin }}
