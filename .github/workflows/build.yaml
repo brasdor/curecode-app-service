@@ -12,8 +12,8 @@ on:
 
 env:
   REGISTRY_LOGIN_SERVER: curecodedev.azurecr.io
-  AZURE_APP_SERVICE_NAME_STAGING: app-curecode-app-service-staging
-  AZURE_APP_SERVICE_NAME_PRODUCTION: app-curecode-app-service-production
+  AZURE_APP_SERVICE_NAME_STAGING: app-curecode-app-staging
+  AZURE_APP_SERVICE_NAME_PRODUCTION: app-curecode-app-production
 
 jobs:
   build:
@@ -144,7 +144,7 @@ jobs:
         with:
           app-name: ${{ env.AZURE_APP_SERVICE_NAME_STAGING }}
           publish-profile: ${{ secrets.AZURE_APP_SERVICE_PUBLISH_PROFILE_STAGING }}
-          images: ${{ needs.package-build.outputs.fqin }}
+          images: ${{ needs.package.outputs.fqin }}
 
   production-deploy:
     needs: package
@@ -181,4 +181,4 @@ jobs:
         with:
           app-name: ${{ env.AZURE_APP_SERVICE_NAME_PRODUCTION }}
           publish-profile: ${{ secrets.AZURE_APP_SERVICE_PUBLISH_PROFILE_PRODUCTION }}
-          images: ${{ needs.package-build.outputs.fqin }}
+          images: ${{ needs.package.outputs.fqin }}

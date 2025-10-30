@@ -6,7 +6,7 @@ info:
 
 servers:
   - url: "https://app-curecode-ai-service-production.azurewebsites.net"
-  - url: "https://app-curecode-ai-service-staging.azurewebsites.net"
+  - url: "https://app-curecode-ai-staging.azurewebsites.net"
   - url: "http://localhost:3000"
 
 tags:
