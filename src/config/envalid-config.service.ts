@@ -54,7 +54,7 @@ export class EnvalidConfigService extends ConfigService {
       DEMO_USER_PASSWORD: envalid.str({ default: "password" }),
       SYSTEM_ADMIN_PASSWORD: envalid.str({ default: "admin" }),
       AI_SERVICE_URL: envalid.url({
-        devDefault: "https://app-curecode-ai-service-staging.azurewebsites.net",
+        devDefault: "https://app-curecode-ai-staging.azurewebsites.net",
       }),
       AI_SERVICE_VERSION: envalid.str({ default: "2024-10-18" }),
       AI_SERVICE_USERNAME: envalid.str({ default: "curecode-app-service" }),

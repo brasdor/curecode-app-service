@@ -4,7 +4,7 @@ ARG ALPINE_VERSION=3.19
 
 # Stage 1: Build
 FROM node:${NODE_VERSION}-alpine${ALPINE_VERSION} AS builder
-LABEL org.opencontainers.image.authors="Rafael Kallis <rafael.kallis@curecode.ch>"
+LABEL org.opencontainers.image.authors="CureCode Team <marcel.cheng@curecode.ch>"
 
 # Set the working directory
 WORKDIR /build-stage

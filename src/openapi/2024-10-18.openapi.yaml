@@ -5,7 +5,7 @@ info:
   version: "2024-10-18"
 
 servers:
-  - url: "https://app-curecode-ai-service-production.azurewebsites.net"
+  - url: "https://app-curecode-ai-production.azurewebsites.net"
   - url: "https://app-curecode-ai-staging.azurewebsites.net"
   - url: "http://localhost:3000"
 
